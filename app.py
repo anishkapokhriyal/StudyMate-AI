@@ -2,7 +2,7 @@ import json
 import os
 import re
 import sqlite3
-from datetime import datetime, date
+from datetime import datetime
 
 import streamlit as st
 from google import genai
@@ -117,6 +117,30 @@ def extract_json(text):
 
 
 # ---------------- STYLE ----------------
+/* Accessibility improvements */
+
+/* Visible keyboard focus */
+*:focus-visible {
+    outline: 3px solid #5145cd !important;
+    outline-offset: 3px;
+}
+
+/* Clear button text */
+div.stButton > button {
+    border-radius: 10px;
+    font-weight: 600;
+    min-height: 42px;
+}
+
+/* Improve heading readability */
+h1, h2, h3 {
+    line-height: 1.5;
+}
+
+/* Keep input labels visible */
+label {
+    font-weight: 600 !important;
+}
 
 st.sidebar.title("📚 StudyMate AI")
 st.sidebar.caption("Your personal learning companion")
@@ -149,9 +173,12 @@ if page == "🏠 Home":
     name = st.text_input("What should we call you?", key="home_name")
     if name.strip():
         st.success(f"Welcome, {name.strip()}! Ready to learn something new?")
-    scores_count = db.execute("SELECT COUNT(*) FROM quiz_scores").fetchone()[0]
-    notes_count = db.execute("SELECT COUNT(*) FROM saved_notes").fetchone()[0]
-    plans_count = db.execute("SELECT COUNT(*) FROM study_plans").fetchone()[0]
+    scores_count, notes_count, plans_count = db.execute("""
+    SELECT
+        (SELECT COUNT(*) FROM quiz_scores),
+        (SELECT COUNT(*) FROM saved_notes),
+        (SELECT COUNT(*) FROM study_plans)
+""").fetchone()
     a, b, c = st.columns(3)
     a.metric("Quizzes completed", scores_count)
     b.metric("Notes saved", notes_count)
@@ -173,15 +200,15 @@ elif page == "🤖 AI Tutor":
     subject = st.selectbox("Subject", subjects, key="tutor_subject")
     topic = st.text_input("Topic (optional)", key="tutor_topic")
     question = st.text_area("What would you like explained?", height=120)
-    if st.button("Ask StudyMate", type="primary"):
-        if not question.strip():
-            st.warning("Please enter a question first.")
-        else:
-            prompt = f"""
-You are StudyMate AI, a careful and encouraging school tutor.
-Subject: {subject}
-Topic: {topic or "Not specified"}
-Student question: {question}
+ if st.button("Ask StudyMate", type="primary"):
+    if not question.strip():
+        st.warning("Please enter a question first.")
+    else:
+        with st.spinner("StudyMate is thinking..."):
+            try:
+                st.markdown(ask_ai(prompt))
+            except Exception as exc:
+                st.error(str(exc))
 
 Explain clearly at an appropriate school level. Use headings and a simple
 example where useful. If the question is ambiguous, say what you are assuming.
