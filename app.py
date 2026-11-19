@@ -4,6 +4,8 @@ import re
 import sqlite3
 from datetime import datetime
 
+from click import prompt
+from click import prompt
 import streamlit as st
 from google import genai
 
@@ -115,32 +117,36 @@ def extract_json(text):
         raise ValueError("The AI response did not contain valid JSON.")
     return json.loads(cleaned[start:end + 1])
 
-
 # ---------------- STYLE ----------------
-/* Accessibility improvements */
+st.markdown("""
+<style>
 
-/* Visible keyboard focus */
-*:focus-visible {
-    outline: 3px solid #5145cd !important;
-    outline-offset: 3px;
-}
+    .main-title {
+        color: #5145cd;
+    }
 
-/* Clear button text */
-div.stButton > button {
-    border-radius: 10px;
-    font-weight: 600;
-    min-height: 42px;
-}
+    div.stButton > button {
+        border-radius: 10px;
+        font-weight: 600;
+        min-height: 42px;
+    }
 
-/* Improve heading readability */
-h1, h2, h3 {
-    line-height: 1.5;
-}
+    /* Accessibility improvements */
+    *:focus-visible {
+        outline: 3px solid #5145cd !important;
+        outline-offset: 3px;
+    }
 
-/* Keep input labels visible */
-label {
-    font-weight: 600 !important;
-}
+    h1, h2, h3 {
+        line-height: 1.5;
+    }
+
+    label {
+        font-weight: 600 !important;
+    }
+    
+</style>
+""", unsafe_allow_html=True)
 
 st.sidebar.title("📚 StudyMate AI")
 st.sidebar.caption("Your personal learning companion")
@@ -166,6 +172,8 @@ with st.sidebar:
     st.caption("AI model: Gemini 3.5 Flash-Lite")
     st.caption("Your notes, plans and scores are stored in this app's local SQLite database.")
 
+    st.sidebar.divider()
+st.sidebar.subheader("🎨 Appearance")
 
 # ---------------- HOME ----------------
 if page == "🏠 Home":
@@ -200,15 +208,15 @@ elif page == "🤖 AI Tutor":
     subject = st.selectbox("Subject", subjects, key="tutor_subject")
     topic = st.text_input("Topic (optional)", key="tutor_topic")
     question = st.text_area("What would you like explained?", height=120)
- if st.button("Ask StudyMate", type="primary"):
-    if not question.strip():
-        st.warning("Please enter a question first.")
-    else:
-        with st.spinner("StudyMate is thinking..."):
-            try:
-                st.markdown(ask_ai(prompt))
-            except Exception as exc:
-                st.error(str(exc))
+    if st.button("Ask StudyMate", type="primary"):
+        if not question.strip():
+            st.warning("Please enter a question first.")
+        else:
+            prompt = f"""
+You are a patient and accurate school tutor.
+Subject: {subject}
+Topic: {topic or "Not specified"}
+Question: {question}
 
 Explain clearly at an appropriate school level. Use headings and a simple
 example where useful. If the question is ambiguous, say what you are assuming.
